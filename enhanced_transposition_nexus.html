@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enhanced Transposition Nexus - Group 9</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f6f9;
+    }
+    .banner {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .banner img {
+      width: 80px;
+    }
+    .banner h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #003366;
+    }
+    .description {
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    textarea {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    h2 {
+      color: #003366;
+    }
+  </style>
+</head>
+<body>
+
+<div class="banner">
+  <img src="image.png" alt="Transposition Nexus Logo">
+  <h1>Enhanced Transposition Nexus - Group 9</h1>
+</div>
+
+<div class="description">
+  <p><strong>This tool was developed for module CC6004 Network and Cloud Security - Year 2024/25.</strong></p>
+  <p><strong>Group Members:</strong></p>
+  <ul>
+    <li>ADEBOLA AKINYOOYE</li>
+    <li>SAYIDALI YASSIN MOHAMED</li>
+    <li>CALLUM HENRY GARY TONG</li>
+    <li>DAMILOLA AYANGA</li>
+    <li>JAKUB KACPER STASIK</li>
+    <li>NERINGA URBONAITE</li>
+    <li>SARAH MULEBA</li>
+  </ul>
+</div>
+
+<h2>Plain Text</h2>
+<textarea id="inputText" placeholder="Enter text to encrypt..." rows="6"></textarea><br>
+<button onclick="encrypt()">Encrypt</button><br>
+<h3>Encrypted Text</h3>
+<textarea id="encryptedText" placeholder="Encrypted output..." rows="6" readonly></textarea>
+
+<h2>Decrypt Text</h2>
+<textarea id="inputEncrypted" placeholder="Enter code to decrypt..." rows="6"></textarea><br>
+<button onclick="decrypt()">Decrypt</button><br>
+<textarea id="decryptedText" placeholder="Decrypted output..." rows="6" readonly></textarea>
+
+<script>
+const keyMap = {
+  'A': ['m7q'], 'B': ['2z8'], 'C': ['f1k'], 'D': ['r3p'], 'E': ['9x2'], 'F': ['h4d'],
+  'G': ['b6v'], 'H': ['8n9'], 'I': ['w2e'], 'J': ['j5t'], 'K': ['l0m'], 'L': ['c3y'],
+  'M': ['7a6'], 'N': ['p8b'], 'O': ['5u4'], 'P': ['v9s'], 'Q': ['d7r'], 'R': ['6k1'],
+  'S': ['z0f'], 'T': ['q1j'], 'U': ['3w5'], 'V': ['n6l'], 'W': ['t4h'], 'X': ['k2c'],
+  'Y': ['x5g'], 'Z': ['a9m'], ' ': ['0e0'], '\n': ['nl0']
+};
+
+const reverseKeyMap = {};
+for (let char in keyMap) {
+  keyMap[char].forEach(code => {
+    reverseKeyMap[code] = char === '\\n' ? '\n' : char;
+  });
+}
+
+function toBinary(str) {
+  return str.split('').map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join('');
+}
+
+function fromBinary(binary) {
+  return binary.match(/.{8}/g).map(byte => String.fromCharCode(parseInt(byte, 2))).join('');
+}
+
+function hexEncode(str) {
+  return str.split('').map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+}
+
+function hexDecode(hex) {
+  return hex.match(/.{2}/g).map(h => String.fromCharCode(parseInt(h, 16))).join('');
+}
+
+function reverseString(str) {
+  return str.split('').reverse().join('');
+}
+
+function rotateString(str, amount) {
+  return str.slice(amount) + str.slice(0, amount);
+}
+
+function keywordShift(str, keyword) {
+  let result = '';
+  keyword = keyword.toUpperCase();
+  for (let i = 0; i < str.length; i++) {
+    const shift = keyword.charCodeAt(i % keyword.length) % 26;
+    const charCode = str.charCodeAt(i);
+    result += String.fromCharCode((charCode + shift) % 256);
+  }
+  return result;
+}
+
+function keywordUnshift(str, keyword) {
+  let result = '';
+  keyword = keyword.toUpperCase();
+  for (let i = 0; i < str.length; i++) {
+    const shift = keyword.charCodeAt(i % keyword.length) % 26;
+    const charCode = str.charCodeAt(i);
+    result += String.fromCharCode((charCode - shift + 256) % 256);
+  }
+  return result;
+}
+
+async function hashMessage(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function encrypt() {
+  let input = document.getElementById("inputText").value.toUpperCase();
+  const hash = await hashMessage(input);
+  input = input.replace(/\n/g, "\n");
+
+  let encrypted = "";
+  for (let char of input) {
+    if (char === "\n") encrypted += "nl0";
+    else if (keyMap[char]) encrypted += keyMap[char][0];
+    else encrypted += '?';
+  }
+
+  encrypted = toBinary(encrypted);
+  encrypted = encrypted.slice(3) + encrypted.slice(0, 3);
+  encrypted = hexEncode(fromBinary(encrypted));
+  encrypted = reverseString(encrypted);
+  encrypted = rotateString(encrypted, 5);
+  encrypted = keywordShift(encrypted, 'GROUP9');
+  encrypted = hexEncode(encrypted);
+
+  document.getElementById("encryptedText").value = encrypted + "::HASH::" + hash;
+}
+
+async function decrypt() {
+  try {
+    let input = document.getElementById("inputEncrypted").value;
+    const [cipherText, originalHash] = input.split("::HASH::");
+    let decrypted = hexDecode(cipherText);
+    decrypted = keywordUnshift(decrypted, 'GROUP9');
+    decrypted = rotateString(decrypted, decrypted.length - 5);
+    decrypted = reverseString(decrypted);
+    decrypted = hexDecode(decrypted);
+
+    let bin = toBinary(decrypted);
+    bin = bin.slice(bin.length - 3) + bin.slice(0, bin.length - 3);
+    let decoded = fromBinary(bin);
+
+    let final = "";
+    for (let i = 0; i < decoded.length; i += 3) {
+      const chunk = decoded.substr(i, 3);
+      final += reverseKeyMap[chunk] || '?';
+    }
+
+    const newHash = await hashMessage(final);
+    final += "\n[HASH VALID: " + (newHash === originalHash ? "YES" : "NO") + "]";
+
+    document.getElementById("decryptedText").value = final;
+  } catch (e) {
+    document.getElementById("decryptedText").value = "Decryption error: Invalid input.";
+  }
+}
+</script>
+
+</body>
+</html>
